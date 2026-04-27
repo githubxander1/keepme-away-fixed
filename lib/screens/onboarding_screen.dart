@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
@@ -137,31 +137,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
         title: const Text('KeepMe Away Setup'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Welcome to KeepMe Away',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              '欢迎使用 KeepMe Away',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             const Text(
-              'This app helps protect your eyes by monitoring your distance from the screen using the front camera. All detection is done on-device with open-source models — no images are saved or transmitted.',
-              style: TextStyle(fontSize: 16),
+              '本应用通过前置摄像头监测您与屏幕的距离，帮助保护您的眼睛。所有检测均在设备本地完成，不会保存或传输任何图像。',
+              style: TextStyle(fontSize: 12),
             ),
             const SizedBox(height: 32),
             const Text(
-              'Required Permissions:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              '需要以下权限：',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             
             // Camera Permission
             _buildPermissionTile(
-              title: 'Camera Access',
-              description: 'Required to detect your face proximity',
+              title: '相机权限',
+              description: '用于检测面部距离',
               isGranted: _cameraPermissionGranted,
               onRequest: _requestCameraPermission,
             ),
@@ -169,8 +169,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
             // Overlay Permission (Android only)
             if (Platform.isAndroid)
               _buildPermissionTile(
-                title: 'Display over other apps',
-                description: 'Required to show protection overlay',
+                title: '悬浮窗权限',
+                description: '用于显示护眼覆盖层',
                 isGranted: _overlayPermissionGranted,
                 onRequest: _requestOverlayPermission,
               ),
@@ -182,18 +182,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.battery_saver),
-                  title: const Text('Battery Optimization'),
-                  subtitle: const Text('Recommended: Disable for reliable background monitoring'),
+                  title: const Text('电池优化'),
+                  subtitle: const Text('建议：关闭以确保后台稳定运行'),
                   trailing: ElevatedButton(
                     onPressed: _requestBatteryOptimization,
-                    child: const Text('Configure'),
+                    child: const Text('设置'),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
             ],
             
-            const Spacer(),
+            const SizedBox(height: 16),
             
             // Continue Button
             SizedBox(
@@ -204,8 +204,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: const Text(
-                  'Continue to Calibration',
-                  style: TextStyle(fontSize: 16),
+                  '继续校准',
+                  style: TextStyle(fontSize: 12),
                 ),
               ),
             ),
@@ -233,7 +233,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
             ? const Icon(Icons.done, color: Colors.green)
             : ElevatedButton(
                 onPressed: onRequest,
-                child: const Text('Grant'),
+                child: const Text('授权'),
               ),
       ),
     );
