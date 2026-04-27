@@ -1,0 +1,31 @@
+workflows:
+  android-apk:
+    name: Android Release APK
+    max_build_duration: 30
+    environment:
+      groups:
+        - default
+    scripts:
+      - name: Set up Flutter
+        script: |
+          flutter doctor
+      
+      - name: Get dependencies
+        script: |
+          flutter pub get
+      
+      - name: Build Release APK
+        script: |
+          flutter build apk --release
+      
+      - name: Upload APK
+        script: |
+          cp build/app/outputs/flutter-apk/app-release.apk $CM_BUILD_DIR/app-release.apk
+    
+    artifacts:
+      - app-release.apk
+    
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com
