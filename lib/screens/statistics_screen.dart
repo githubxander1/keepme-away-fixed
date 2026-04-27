@@ -64,7 +64,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       await imageFile.writeAsBytes(image);
       
       // Share the image
-      await Share.shareXFiles(
+      await SharePlus.instance.shareXFiles(
         [XFile(imagePath)],
         text: 'My KeepMe Away Stats - Safe Distance Score: $_safeDistanceScore 📱👀',
       );
@@ -129,8 +129,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         borderRadius: BorderRadius.circular(12),
                         gradient: LinearGradient(
                           colors: [
-                            _getScoreColor(_safeDistanceScore).withOpacity(0.1),
-                            _getScoreColor(_safeDistanceScore).withOpacity(0.05),
+                            _getScoreColor(_safeDistanceScore).withValues(alpha: 0.1),
+                            _getScoreColor(_safeDistanceScore).withValues(alpha: 0.05),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -276,7 +276,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                           height: 80 * heightRatio + 10,
                                           width: 24,
                                           decoration: BoxDecoration(
-                                            color: Colors.orange.withOpacity(0.7),
+                                            color: Colors.orange.withValues(alpha: 0.7),
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                         ),
@@ -344,7 +344,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -397,7 +397,7 @@ class _StatBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(

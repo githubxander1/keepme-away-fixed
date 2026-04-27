@@ -332,8 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   
-                  if (_scheduledEnabled) ...[
-                    const SizedBox(height: 8),
+                  if (_scheduledEnabled) ...[\n                    const SizedBox(height: 8),
                     
                     Row(
                       children: [
@@ -437,8 +436,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   
-                  if (_breakReminderEnabled) ...[
-                    Padding(
+                  if (_breakReminderEnabled) ...[\n                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,7 +534,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.1),
+              color: Colors.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Column(

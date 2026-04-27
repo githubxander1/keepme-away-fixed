@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class ProtectionService {
@@ -20,7 +21,9 @@ class ProtectionService {
       });
       return result == true;
     } on PlatformException catch (e) {
-      print('Failed to start protection service: ${e.message}');
+      if (kDebugMode) {
+        print('Failed to start protection service: ${e.message}');
+      }
       return false;
     }
   }
@@ -30,7 +33,9 @@ class ProtectionService {
       final result = await _channel.invokeMethod('stop');
       return result == true;
     } on PlatformException catch (e) {
-      print('Failed to stop protection service: ${e.message}');
+      if (kDebugMode) {
+        print('Failed to stop protection service: ${e.message}');
+      }
       return false;
     }
   }
@@ -40,7 +45,9 @@ class ProtectionService {
       final result = await _channel.invokeMethod('status');
       return result == true;
     } on PlatformException catch (e) {
-      print('Failed to get protection service status: ${e.message}');
+      if (kDebugMode) {
+        print('Failed to get protection service status: ${e.message}');
+      }
       return false;
     }
   }
@@ -50,7 +57,9 @@ class ProtectionService {
       final result = await _channel.invokeMethod('showOverlay');
       return result == true;
     } on PlatformException catch (e) {
-      print('Failed to show overlay: ${e.message}');
+      if (kDebugMode) {
+        print('Failed to show overlay: ${e.message}');
+      }
       return false;
     }
   }
@@ -60,7 +69,9 @@ class ProtectionService {
       final result = await _channel.invokeMethod('hideOverlay');
       return result == true;
     } on PlatformException catch (e) {
-      print('Failed to hide overlay: ${e.message}');
+      if (kDebugMode) {
+        print('Failed to hide overlay: ${e.message}');
+      }
       return false;
     }
   }

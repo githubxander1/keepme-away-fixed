@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -37,8 +35,6 @@ class FaceDetectorService {
 
   // BlazeFace model input size
   static const int _inputSize = 128;
-  // BlazeFace detection threshold
-  static const double _confidenceThreshold = 0.5;
 
   // ===== FRAME THROTTLING =====
   int _frameCount = 0;
