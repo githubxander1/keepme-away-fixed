@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+ï»¿import 'package:flutter/material.dart';
 import '../utils/prefs.dart';
 import '../main.dart';
 
@@ -332,7 +332,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   
-                  if (_scheduledEnabled) ...[\n                    const SizedBox(height: 8),
+                  if (_scheduledEnabled) ...[
+                    const SizedBox(height: 8),
                     
                     Row(
                       children: [
@@ -436,7 +437,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   
-                  if (_breakReminderEnabled) ...[\n                    Padding(
+                  if (_breakReminderEnabled) ...[
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,10 +548,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'â€?Threshold Factor: Higher = less sensitive (need to be very close)\n'
-                  'â€?Hysteresis Gap: Prevents rapid on/off switching\n'
-                  'â€?Warning Time: Grace period before screen blocks\n'
-                  'â€?Detection Threshold: Face detection confidence level',
+                  'ï¿½?Threshold Factor: Higher = less sensitive (need to be very close)\n'
+                  'ï¿½?Hysteresis Gap: Prevents rapid on/off switching\n'
+                  'ï¿½?Warning Time: Grace period before screen blocks\n'
+                  'ï¿½?Detection Threshold: Face detection confidence level',
                   style: TextStyle(fontSize: 12),
                 ),
               ],
