@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
-                          'âœ“ Your screen is being protected. You can minimize the app.',
+                          'âœ?Your screen is being protected. You can minimize the app.',
                           style: TextStyle(color: Colors.green),
                         ),
                       ),
@@ -306,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             
-            const Spacer(),
+            const SizedBox(height: 24),
             
             // Help Text
             Container(
@@ -324,11 +324,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'â€¢ The app monitors your face distance using the front camera\n'
-                    'â€¢ When you get too close, you\'ll see a warning countdown\n'
-                    'â€¢ If you stay too close, the screen will be blocked\n'
-                    'â€¢ All processing is done on-device for privacy\n'
-                    'â€¢ Powered by open-source models (no Google services)',
+                    'â€?The app monitors your face distance using the front camera\n'
+                    'â€?When you get too close, you\'ll see a warning countdown\n'
+                    'â€?If you stay too close, the screen will be blocked\n'
+                    'â€?All processing is done on-device for privacy\n'
+                    'â€?Powered by open-source models (no Google services)',
                     style: TextStyle(fontSize: 12),
                   ),
                   if (Platform.isAndroid) ...[
