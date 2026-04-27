@@ -546,10 +546,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'â€¢ Threshold Factor: Higher = less sensitive (need to be very close)\n'
-                  'â€¢ Hysteresis Gap: Prevents rapid on/off switching\n'
-                  'â€¢ Warning Time: Grace period before screen blocks\n'
-                  'â€¢ Detection Threshold: Face detection confidence level',
+                  'â€?Threshold Factor: Higher = less sensitive (need to be very close)\n'
+                  'â€?Hysteresis Gap: Prevents rapid on/off switching\n'
+                  'â€?Warning Time: Grace period before screen blocks\n'
+                  'â€?Detection Threshold: Face detection confidence level',
                   style: TextStyle(fontSize: 12),
                 ),
               ],
@@ -560,3 +560,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+

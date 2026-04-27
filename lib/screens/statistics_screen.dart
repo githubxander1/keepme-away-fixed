@@ -64,7 +64,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       await imageFile.writeAsBytes(image);
       
       // Share the image
-      await SharePlus.instance.shareXFiles(
+      await Share.shareXFiles(
         [XFile(imagePath)],
         text: 'My KeepMe Away Stats - Safe Distance Score: $_safeDistanceScore ðŸ“±ðŸ‘€',
       );
@@ -359,10 +359,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'â€¢ Keep your device at arm\'s length\n'
-                          'â€¢ Take breaks every 20 minutes\n'
-                          'â€¢ Adjust screen brightness to your environment\n'
-                          'â€¢ Lower score = more warnings = closer to screen',
+                          'â€?Keep your device at arm\'s length\n'
+                          'â€?Take breaks every 20 minutes\n'
+                          'â€?Adjust screen brightness to your environment\n'
+                          'â€?Lower score = more warnings = closer to screen',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[700],
@@ -455,3 +455,4 @@ class _AllTimeStatRow extends StatelessWidget {
     );
   }
 }
+
