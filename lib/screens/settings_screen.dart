@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import '../utils/prefs.dart';
+import '../utils/language_provider.dart';
+import '../l10n/app_localizations.dart';
 import '../main.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -15,12 +17,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _warningTime;
   late double _detectionThreshold;
   
-  // Schedule settings
   late bool _scheduledEnabled;
   late int _scheduleStartHour;
   late int _scheduleEndHour;
   
-  // Feedback settings
   late bool _hapticsEnabled;
   late bool _soundEnabled;
   late bool _breakReminderEnabled;
@@ -59,9 +59,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await PrefsHelper.setBreakReminderEnabled(_breakReminderEnabled);
     await PrefsHelper.setBreakReminderInterval(_breakReminderInterval);
     
+    final loc = AppLocalizations.of(context);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings saved')),
+        SnackBar(content: Text(loc?.translate('settingsSaved') ?? 'Settings saved')),
       );
     }
   }
@@ -84,23 +85,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '$h:00 $ampm';
   }
 
+  void _changeLanguage(Locale? locale) async {
+    if (locale != null) {
+      ScreenProtectorApp.setLocale(context, locale);
+      setState(() {});
+    } else {
+      await LanguageProvider.clearLocale();
+      ScreenProtectorApp.setLocale(context, const Locale('en'));
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(loc?.translate('settings') ?? 'Settings'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           TextButton(
             onPressed: _saveSettings,
-            child: const Text('Save'),
+            child: Text(loc?.translate('save') ?? 'Save'),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // Appearance Card
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -112,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(Icons.palette, color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
-                        'Appearance',
+                        loc?.translate('appearance') ?? 'Appearance',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ],
@@ -127,20 +140,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ? Icons.light_mode
                               : Icons.brightness_auto,
                     ),
-                    title: const Text('Theme'),
-                    subtitle: const Text('Choose your preferred appearance'),
+                    title: Text(loc?.translate('theme') ?? 'Theme'),
+                    subtitle: Text(loc?.translate('chooseAppearance') ?? 'Choose your preferred appearance'),
                     trailing: DropdownButton<ThemeMode>(
                       value: ScreenProtectorApp.getThemeMode(context),
                       underline: const SizedBox(),
-                      items: const [
-                        DropdownMenuItem(value: ThemeMode.system, child: Text('System')),
-                        DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
-                        DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+                      items: [
+                        DropdownMenuItem(value: ThemeMode.system, child: Text(loc?.translate('system') ?? 'System')),
+                        DropdownMenuItem(value: ThemeMode.light, child: Text(loc?.translate('light') ?? 'Light')),
+                        DropdownMenuItem(value: ThemeMode.dark, child: Text(loc?.translate('dark') ?? 'Dark')),
                       ],
                       onChanged: (mode) {
                         if (mode != null) {
                           ScreenProtectorApp.setThemeMode(context, mode);
                           setState(() {});
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.language),
+                    title: Text(loc?.translate('language') ?? 'Language'),
+                    subtitle: Text(loc?.translate('chooseAppearance') ?? 'Choose your preferred language'),
+                    trailing: DropdownButton<String>(
+                      value: ScreenProtectorApp.getLocale(context)?.languageCode ?? 'system',
+                      underline: const SizedBox(),
+                      items: [
+                        DropdownMenuItem(value: 'system', child: Text(loc?.translate('systemLanguage') ?? 'System Language')),
+                        DropdownMenuItem(value: 'en', child: Text(loc?.translate('english') ?? 'English')),
+                        DropdownMenuItem(value: 'zh', child: Text(loc?.translate('chinese') ?? '中文')),
+                      ],
+                      onChanged: (code) {
+                        if (code != null) {
+                          if (code == 'system') {
+                            _changeLanguage(null);
+                          } else {
+                            _changeLanguage(Locale(code));
+                          }
                         }
                       },
                     ),
@@ -159,19 +197,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Detection Settings',
+                    loc?.translate('detectionSettings') ?? 'Detection Settings',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   
-                  // Threshold Factor
                   Text(
-                    'Threshold Factor: ${_thresholdFactor.toStringAsFixed(2)}',
+                    '${loc?.translate('thresholdFactor') ?? 'Threshold Factor'}: ${_thresholdFactor.toStringAsFixed(2)}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const Text(
-                    'Higher values = need to be closer to trigger (less sensitive)',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  Text(
+                    loc?.translate('thresholdFactorDescription') ?? 'Higher values = need to be closer to trigger (less sensitive)',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   Slider(
                     value: _thresholdFactor,
@@ -185,14 +222,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Hysteresis Gap
                   Text(
-                    'Hysteresis Gap: ${_hysteresisGap.toStringAsFixed(2)}',
+                    '${loc?.translate('hysteresisGap') ?? 'Hysteresis Gap'}: ${_hysteresisGap.toStringAsFixed(2)}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const Text(
-                    'Prevents flickering between warning states',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  Text(
+                    loc?.translate('hysteresisGapDescription') ?? 'Prevents flickering between warning states',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   Slider(
                     value: _hysteresisGap,
@@ -206,14 +242,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Detection Threshold
                   Text(
-                    'Detection Threshold: ${_detectionThreshold.toStringAsFixed(2)}',
+                    '${loc?.translate('detectionThreshold') ?? 'Detection Threshold'}: ${_detectionThreshold.toStringAsFixed(2)}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const Text(
-                    'Minimum confidence for face detection',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  Text(
+                    loc?.translate('detectionThresholdDescription') ?? 'Minimum confidence for face detection',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   Slider(
                     value: _detectionThreshold,
@@ -238,19 +273,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Timing Settings',
+                    loc?.translate('timingSettings') ?? 'Timing Settings',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   
-                  // Warning Time
                   Text(
-                    'Warning Time: $_warningTime seconds',
+                    '${loc?.translate('warningTime') ?? 'Warning Time'}: $_warningTime ${loc?.translate('minutes') ?? 'seconds'}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const Text(
-                    'How long to show warning before blocking screen',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  Text(
+                    loc?.translate('warningTimeDescription') ?? 'How long to show warning before blocking screen',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   Slider(
                     value: _warningTime.toDouble(),
@@ -275,19 +309,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Current Calibration',
+                    loc?.translate('currentCalibration') ?? 'Current Calibration',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  Text('Baseline Area: ${PrefsHelper.getBaselineArea().toStringAsFixed(4)}'),
-                  Text('Calibrated: ${PrefsHelper.getIsCalibrated() ? 'Yes' : 'No'}'),
+                  Text('${loc?.translate('baselineArea') ?? 'Baseline Area'}: ${PrefsHelper.getBaselineArea().toStringAsFixed(4)}'),
+                  Text('${loc?.translate('calibrated') ?? 'Calibrated'}: ${PrefsHelper.getIsCalibrated() ? (loc?.translate('yes') ?? 'Yes') : (loc?.translate('no') ?? 'No')}'),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Current thresholds (calculated):',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Text(
+                    loc?.translate('currentCalibration') ?? 'Current thresholds (calculated):',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  Text('Enter threshold: ${(PrefsHelper.getBaselineArea() * _thresholdFactor).toStringAsFixed(4)}'),
-                  Text('Exit threshold: ${(PrefsHelper.getBaselineArea() * (_thresholdFactor - _hysteresisGap).clamp(0.8, double.infinity)).toStringAsFixed(4)}'),
+                  Text('${loc?.translate('enterThreshold') ?? 'Enter threshold'}: ${(PrefsHelper.getBaselineArea() * _thresholdFactor).toStringAsFixed(4)}'),
+                  Text('${loc?.translate('exitThreshold') ?? 'Exit threshold'}: ${(PrefsHelper.getBaselineArea() * (_thresholdFactor - _hysteresisGap).clamp(0.8, double.infinity)).toStringAsFixed(4)}'),
                 ],
               ),
             ),
@@ -295,7 +329,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 16),
           
-          // Scheduled Protection Card
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -307,24 +340,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Icon(Icons.schedule, color: Colors.purple),
                       const SizedBox(width: 8),
                       Text(
-                        'Scheduled Protection',
+                        loc?.translate('scheduledProtection') ?? 'Scheduled Protection',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Automatically enable protection during set hours',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  Text(
+                    loc?.translate('scheduledProtectionDescription') ?? 'Automatically enable protection during set hours',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
                   
                   SwitchListTile(
-                    title: const Text('Enable Schedule'),
+                    title: Text(loc?.translate('enableSchedule') ?? 'Enable Schedule'),
                     subtitle: Text(
                       _scheduledEnabled 
                           ? 'Protection auto-starts ${_formatHour(_scheduleStartHour)} - ${_formatHour(_scheduleEndHour)}'
-                          : 'Manual control only',
+                          : loc?.translate('manualControlOnly') ?? 'Manual control only',
                     ),
                     value: _scheduledEnabled,
                     onChanged: (value) {
@@ -341,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Start Time', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text(loc?.translate('startTime') ?? 'Start Time', style: const TextStyle(fontWeight: FontWeight.bold)),
                               DropdownButton<int>(
                                 value: _scheduleStartHour,
                                 isExpanded: true,
@@ -359,7 +392,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('End Time', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text(loc?.translate('endTime') ?? 'End Time', style: const TextStyle(fontWeight: FontWeight.bold)),
                               DropdownButton<int>(
                                 value: _scheduleEndHour,
                                 isExpanded: true,
@@ -382,7 +415,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 16),
           
-          // Feedback & Alerts Card
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -394,7 +426,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(Icons.notifications_active, color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
-                        'Feedback & Alerts',
+                        loc?.translate('feedbackAlerts') ?? 'Feedback & Alerts',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ],
@@ -402,8 +434,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                   
                   SwitchListTile(
-                    title: const Text('Haptic Feedback'),
-                    subtitle: const Text('Vibrate on warnings'),
+                    title: Text(loc?.translate('hapticFeedback') ?? 'Haptic Feedback'),
+                    subtitle: Text(loc?.translate('hapticFeedbackDescription') ?? 'Vibrate on warnings'),
                     secondary: const Icon(Icons.vibration),
                     value: _hapticsEnabled,
                     onChanged: (value) {
@@ -412,8 +444,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   
                   SwitchListTile(
-                    title: const Text('Sound Alerts'),
-                    subtitle: const Text('Play sound on warnings'),
+                    title: Text(loc?.translate('soundAlerts') ?? 'Sound Alerts'),
+                    subtitle: Text(loc?.translate('soundAlertsDescription') ?? 'Play sound on warnings'),
                     secondary: const Icon(Icons.volume_up),
                     value: _soundEnabled,
                     onChanged: (value) {
@@ -424,11 +456,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(),
                   
                   SwitchListTile(
-                    title: const Text('Break Reminders'),
+                    title: Text(loc?.translate('breakReminders') ?? 'Break Reminders'),
                     subtitle: Text(
                       _breakReminderEnabled
-                          ? 'Remind every $_breakReminderInterval minutes'
-                          : 'Disabled',
+                          ? loc?.translate('remindEvery', params: {'interval': '$_breakReminderInterval'}) ?? 'Remind every $_breakReminderInterval minutes'
+                          : loc?.translate('manualControlOnly') ?? 'Disabled',
                     ),
                     secondary: const Icon(Icons.timer),
                     value: _breakReminderEnabled,
@@ -443,7 +475,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Reminder interval: $_breakReminderInterval minutes'),
+                          Text('${loc?.translate('reminderInterval') ?? 'Reminder interval'}: $_breakReminderInterval ${loc?.translate('minutes') ?? 'minutes'}'),
                           Slider(
                             value: _breakReminderInterval.toDouble(),
                             min: 10,
@@ -470,14 +502,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: _resetToDefaults,
-                  child: const Text('Reset to Defaults'),
+                  child: Text(loc?.translate('resetToDefaults') ?? 'Reset to Defaults'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _saveSettings,
-                  child: const Text('Save Settings'),
+                  child: Text(loc?.translate('saveSettings') ?? 'Save Settings'),
                 ),
               ),
             ],
@@ -485,7 +517,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 16),
           
-          // About Card
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -497,35 +528,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
-                        'About',
+                        loc?.translate('about') ?? 'About',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const ListTile(
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.apps),
-                    title: Text('KeepMe Away'),
-                    subtitle: Text('Version 1.0.0'),
+                    leading: const Icon(Icons.apps),
+                    title: Text(loc?.translate('appTitle') ?? 'KeepMe Away'),
+                    subtitle: Text('${loc?.translate('version') ?? 'Version'} 1.0.0'),
                   ),
-                  const ListTile(
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.gavel),
-                    title: Text('License'),
-                    subtitle: Text('MIT License'),
+                    leading: const Icon(Icons.gavel),
+                    title: Text(loc?.translate('license') ?? 'License'),
+                    subtitle: const Text('MIT License'),
                   ),
-                  const ListTile(
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.code),
-                    title: Text('Source Code'),
-                    subtitle: Text('github.com/Priyanshu-5257/keepme-away'),
+                    leading: const Icon(Icons.code),
+                    title: Text(loc?.translate('sourceCode') ?? 'Source Code'),
+                    subtitle: const Text('github.com/Priyanshu-5257/keepme-away'),
                   ),
-                  const ListTile(
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.psychology),
-                    title: Text('Face Detection'),
-                    subtitle: Text('MediaPipe BlazeFace (Apache 2.0)'),
+                    leading: const Icon(Icons.psychology),
+                    title: Text(loc?.translate('faceDetection') ?? 'Face Detection'),
+                    subtitle: const Text('MediaPipe BlazeFace (Apache 2.0)'),
                   ),
                 ],
               ),
@@ -539,20 +570,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Colors.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Settings Help:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  loc?.translate('settingsHelp') ?? 'Settings Help:',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  '�?Threshold Factor: Higher = less sensitive (need to be very close)\n'
-                  '�?Hysteresis Gap: Prevents rapid on/off switching\n'
-                  '�?Warning Time: Grace period before screen blocks\n'
-                  '�?Detection Threshold: Face detection confidence level',
-                  style: TextStyle(fontSize: 12),
+                  loc?.translate('settingsHelpContent') ?? '',
+                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),
@@ -562,4 +590,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-

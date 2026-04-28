@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import '../services/face_detector.dart';
 import '../utils/prefs.dart';
 import '../widgets/face_overlay.dart';
+import '../l10n/app_localizations.dart';
 import 'home_screen.dart';
 
 class CalibrationScreen extends StatefulWidget {
@@ -24,9 +25,8 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   List<double> _samples = [];
   Timer? _calibrationTimer;
   int _countdown = 0;
-  String _status = 'Position your face in the camera view at a comfortable distance';
+  String _status = '';
   
-  // Face overlay tracking
   ui.Rect? _currentFaceRect;
   bool _faceDetected = false;
   int _lastFrameWidth = 320;
@@ -35,7 +35,6 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   final FaceDetectorService _faceDetector = FaceDetectorService();
   StreamSubscription<FaceDetectionResult>? _detectionSubscription;
   
-  // Platform channel for face detection communication
   static const platform = MethodChannel('io.github.priyanshu5257.keepmeaway/face_detection');
   bool _isImageStreamActive = false;
 
@@ -57,14 +56,15 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   Future<void> _initializeCamera() async {
+    final loc = AppLocalizations.of(context);
+    
     try {
       _cameras = await availableCameras();
       if (_cameras == null || _cameras!.isEmpty) {
-        setState(() => _status = 'No cameras available');
+        setState(() => _status = loc?.translate('noCamerasAvailable') ?? 'No cameras available');
         return;
       }
 
-      // Find front camera
       CameraDescription? frontCamera;
       for (final camera in _cameras!) {
         if (camera.lensDirection == CameraLensDirection.front) {
@@ -74,13 +74,13 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       }
 
       if (frontCamera == null) {
-        setState(() => _status = 'Front camera not available');
+        setState(() => _status = loc?.translate('frontCameraNotAvailable') ?? 'Front camera not available');
         return;
       }
 
       _controller = CameraController(
         frontCamera,
-        ResolutionPreset.low, // Use low resolution for better battery (320x240 is enough for face detection)
+        ResolutionPreset.low,
         enableAudio: false,
       );
 
@@ -89,17 +89,16 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       if (mounted) {
         setState(() {
           _isCameraInitialized = true;
-          _status = 'Camera ready. Position your face comfortably and tap "Start Calibration"';
+          _status = loc?.translate('calibrationInstruction2') ?? 'Camera ready. Position your face comfortably and tap "Start Calibration"';
         });
       }
     } catch (e) {
-      setState(() => _status = 'Error initializing camera: $e');
+      setState(() => _status = '${loc?.translate('errorInitializingCamera') ?? 'Error initializing camera'}: $e');
     }
   }
 
   void _setupDetectionListener() {
     _detectionSubscription = _faceDetector.detectionStream.listen((result) {
-      // Update face overlay even when not calibrating
       setState(() {
         _currentFaceRect = result.faceRect;
         _faceDetected = result.faceDetected;
@@ -109,10 +108,16 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       
       if (!_isCalibrating) return;
       
+      final loc = AppLocalizations.of(context);
+      
       if (result.faceDetected && result.normalizedArea > 0) {
         setState(() {
           _samples.add(result.normalizedArea);
-          _status = 'Calibrating... Sample ${_samples.length}/15 (Area: ${result.normalizedArea.toStringAsFixed(4)})';
+          _status = loc?.translate('calibratingSamples', params: {
+            'current': '${_samples.length}',
+            'total': '15',
+            'area': result.normalizedArea.toStringAsFixed(4),
+          }) ?? 'Calibrating... Sample ${_samples.length}/15 (Area: ${result.normalizedArea.toStringAsFixed(4)})';
         });
         
         if (kDebugMode) {
@@ -120,7 +125,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         }
       } else {
         setState(() {
-          _status = 'Calibrating... Please ensure your face is visible';
+          _status = loc?.translate('calibratingFaceVisible') ?? 'Calibrating... Please ensure your face is visible';
         });
       }
     });
@@ -128,22 +133,23 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
   void _startCalibration() {
     if (!_isCameraInitialized || _isCalibrating) return;
+    
+    final loc = AppLocalizations.of(context);
 
     setState(() {
       _isCalibrating = true;
       _samples.clear();
       _countdown = 2;
-      _status = 'Get ready! Calibration starts in $_countdown seconds';
+      _status = loc?.translate('calibrationGetReady', params: {'countdown': '$_countdown'}) ?? 'Get ready! Calibration starts in $_countdown seconds';
     });
 
-    // Countdown timer
     _calibrationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _countdown--;
         if (_countdown > 0) {
-          _status = 'Get ready! Calibration starts in $_countdown seconds';
+          _status = loc?.translate('calibrationGetReady', params: {'countdown': '$_countdown'}) ?? 'Get ready! Calibration starts in $_countdown seconds';
         } else {
-          _status = 'Calibrating... Stay still and look at the camera';
+          _status = loc?.translate('calibrating') ?? 'Calibrating... Stay still and look at the camera';
           timer.cancel();
           _startSampling();
         }
@@ -152,15 +158,12 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   void _startSampling() {
-    // Use Android ML Kit for calibration - same as protection service
     _startAndroidFaceDetectionForCalibration();
     
-    // Stop after 10 seconds or when we have enough samples
     Timer(const Duration(seconds: 10), () {
       _stopCalibration();
     });
 
-    // Also check periodically if we have enough samples
     Timer.periodic(const Duration(milliseconds: 500), (timer) {
       if (_samples.length >= 15) {
         timer.cancel();
@@ -171,10 +174,8 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
   void _startAndroidFaceDetectionForCalibration() async {
     try {
-      // Start the Android face detection service temporarily for calibration
       await platform.invokeMethod('startCalibrationMode');
       
-      // Listen for face detection results from Android
       Timer.periodic(const Duration(milliseconds: 200), (timer) {
         if (!_isCalibrating) {
           timer.cancel();
@@ -187,7 +188,6 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       
     } catch (e) {
       if (kDebugMode) print('Error starting Android face detection for calibration: $e');
-      // Fallback to Flutter face detection if Android approach fails
       _startFlutterFaceDetection();
     }
   }
@@ -202,8 +202,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
           if (kDebugMode) print('Calibration sample: $area (${_samples.length}/15)');
           
           setState(() {
-            _status = 'Calibrating... ${_samples.length}/15 samples collected\n'
-                'Current area: ${area.toStringAsFixed(4)}';
+            _status = '${_samples.length}/15 ${_samples.length >= 15 ? 'completed' : 'samples collected'}';
           });
         }
       }
@@ -213,7 +212,6 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   void _startFlutterFaceDetection() {
-    // Fallback: Start image stream for face detection using Flutter TFLite
     try {
       if (_controller != null && _controller!.value.isInitialized) {
         _controller!.startImageStream((image) {
@@ -224,15 +222,17 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         if (kDebugMode) print('Image stream started successfully');
       } else {
         if (kDebugMode) print('Camera controller not ready for image stream');
+        final loc = AppLocalizations.of(context);
         setState(() {
-          _status = 'Camera not ready. Please try again.';
+          _status = loc?.translate('calibrationInstruction1') ?? 'Camera not ready. Please try again.';
         });
         return;
       }
     } catch (e) {
       if (kDebugMode) print('Error starting image stream: $e');
+      final loc = AppLocalizations.of(context);
       setState(() {
-        _status = 'Error starting camera stream: $e';
+        _status = '${loc?.translate('errorInitializingCamera') ?? 'Error starting camera stream'}: $e';
       });
       return;
     }
@@ -258,42 +258,44 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     if (_samples.isNotEmpty) {
       _processCalibrationResults();
     } else {
+      final loc = AppLocalizations.of(context);
       setState(() {
-        _status = 'Calibration failed. No face detected. Please try again.';
+        _status = loc?.translate('calibrationFailedNoFace') ?? 'Calibration failed. No face detected. Please try again.';
       });
     }
   }
 
   void _processCalibrationResults() async {
+    final loc = AppLocalizations.of(context);
+    
     if (_samples.length < 5) {
       setState(() {
-        _status = 'Not enough samples collected. Please try again.';
+        _status = loc?.translate('calibrationFailedSamples') ?? 'Not enough samples collected. Please try again.';
       });
       return;
     }
 
-    // Calculate baseline using median for robustness
     final baseline = FaceDetectorService.calculateMedian(_samples);
     
-    // Validate baseline - should be reasonable for face detection
     if (baseline < 0.005 || baseline > 0.3) {
       setState(() {
-        _status = 'Invalid calibration data (baseline: ${baseline.toStringAsFixed(4)}). Please ensure your face is clearly visible and try again.';
+        _status = loc?.translate('calibrationFailedInvalid', params: {'baseline': baseline.toStringAsFixed(4)}) ?? 'Invalid calibration data (baseline: ${baseline.toStringAsFixed(4)}). Please ensure your face is clearly visible and try again.';
       });
       return;
     }
     
-    // Calculate some statistics for better feedback
     final minSample = _samples.reduce((a, b) => a < b ? a : b);
     final maxSample = _samples.reduce((a, b) => a > b ? a : b);
     final avgSample = _samples.reduce((a, b) => a + b) / _samples.length;
     
     setState(() {
-      _status = 'Calibration successful!\n'
-          'Baseline: ${baseline.toStringAsFixed(4)}\n'
-          'Range: ${minSample.toStringAsFixed(4)} - ${maxSample.toStringAsFixed(4)}\n'
-          'Average: ${avgSample.toStringAsFixed(4)}\n'
-          'Samples: ${_samples.length}';
+      _status = loc?.translate('calibrationSuccess', params: {
+        'baseline': baseline.toStringAsFixed(4),
+        'min': minSample.toStringAsFixed(4),
+        'max': maxSample.toStringAsFixed(4),
+        'avg': avgSample.toStringAsFixed(4),
+        'count': '${_samples.length}',
+      }) ?? 'Calibration successful!\nBaseline: ${baseline.toStringAsFixed(4)}\nRange: ${minSample.toStringAsFixed(4)} - ${maxSample.toStringAsFixed(4)}\nAverage: ${avgSample.toStringAsFixed(4)}\nSamples: ${_samples.length}';
     });
 
     if (kDebugMode) {
@@ -304,19 +306,15 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       print('  Samples: $_samples');
     }
 
-    // Save calibration data
     PrefsHelper.setBaselineArea(baseline);
     PrefsHelper.setIsCalibrated(true);
 
-    // Wait a moment to show results, then navigate
     await Future.delayed(const Duration(seconds: 2));
 
-    // Dispose camera and navigate
     await _disposeCameraAndNavigate();
   }
 
   Future<void> _disposeCameraAndNavigate() async {
-    // Stop image stream first to prevent further processing
     if (_isImageStreamActive) {
       try {
         await _controller?.stopImageStream();
@@ -326,17 +324,12 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       }
     }
     
-    // Stop face detector
     _faceDetector.dispose();
-    
-    // Cancel subscriptions
     _calibrationTimer?.cancel();
     _detectionSubscription?.cancel();
     
-    // Wait a moment for all operations to complete
     await Future.delayed(const Duration(milliseconds: 1000));
     
-    // Dispose the controller
     try {
       await _controller?.dispose();
     } catch (e) {
@@ -350,7 +343,6 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       });
     }
 
-    // Give a moment for resources to release
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (mounted) {
@@ -361,8 +353,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   void _skipCalibration() async {
-    // For demo purposes, set a default baseline
-    PrefsHelper.setBaselineArea(0.15); // Default baseline
+    PrefsHelper.setBaselineArea(0.15);
     PrefsHelper.setIsCalibrated(true);
     
     await _controller?.dispose();
@@ -378,14 +369,19 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    
+    if (_status.isEmpty) {
+      _status = loc?.translate('calibrationInstruction1') ?? 'Position your face in the camera view at a comfortable distance';
+    }
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calibration'),
+        title: Text(loc?.translate('calibration') ?? 'Calibration'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Column(
         children: [
-          // Camera Preview - fills space naturally like a modern camera app
           Expanded(
             flex: 3,
             child: Container(
@@ -410,7 +406,6 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                             ),
                           ),
                         ),
-                        // Face Overlay
                         FaceOverlay(
                           faceRect: _currentFaceRect,
                           imageSize: Size(
@@ -428,7 +423,6 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
             ),
           ),
           
-          // Status and Controls
           Expanded(
             flex: 2,
             child: SingleChildScrollView(
@@ -456,7 +450,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${_samples.length}/15 samples',
+                          '${_samples.length}/15 ${loc?.translate('samples') ?? 'samples'}',
                           style: const TextStyle(fontSize: 12),
                         ),
                       ],
@@ -472,7 +466,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                           onPressed: _isCameraInitialized && !_isCalibrating
                               ? _startCalibration
                               : null,
-                          child: const Text('Start Calibration'),
+                          child: Text(loc?.translate('startCalibration') ?? 'Start Calibration'),
                         ),
                       ),
                       
@@ -485,7 +479,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
                             ),
-                            child: const Text('Stop'),
+                            child: Text(loc?.translate('stopCalibration') ?? 'Stop'),
                           ),
                         ),
                       ],
@@ -494,14 +488,10 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  const Text(
-                    'Instructions:\n'
-                    '1. Sit at your comfortable viewing distance\n'
-                    '2. Look directly at the camera\n'
-                    '3. Stay still during calibration\n'
-                    '4. This will be your baseline distance',
+                  Text(
+                    loc?.translate('calibrationInstructions') ?? '',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),

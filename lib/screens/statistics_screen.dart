@@ -5,6 +5,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../services/statistics_service.dart';
+import '../l10n/app_localizations.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -20,7 +21,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int _safeDistanceScore = 100;
   bool _isLoading = true;
   
-  // Screenshot controller for export
   final _screenshotController = ScreenshotController();
 
   @override
@@ -52,18 +52,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
   
   Future<void> _shareStats() async {
+    final loc = AppLocalizations.of(context);
+    
     try {
-      // Capture screenshot
       final Uint8List? image = await _screenshotController.capture();
       if (image == null) return;
       
-      // Save to temporary file
       final directory = await getTemporaryDirectory();
       final imagePath = '${directory.path}/keepme_away_stats.png';
       final File imageFile = File(imagePath);
       await imageFile.writeAsBytes(image);
       
-      // Share the image
       await Share.shareXFiles(
         [XFile(imagePath)],
         text: 'My KeepMe Away Stats - Safe Distance Score: $_safeDistanceScore ðŸ“±ðŸ‘€',
@@ -71,7 +70,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share: $e')),
+          SnackBar(content: Text(loc?.translate('failedToShare', params: {'error': '$e'}) ?? 'Failed to share: $e')),
         );
       }
     }
@@ -95,14 +94,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Statistics'),
+        title: Text(loc?.translate('statistics') ?? 'Statistics'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
-            tooltip: 'Share Stats',
+            tooltip: loc?.translate('shareStats') ?? 'Share Stats',
             onPressed: _shareStats,
           ),
           IconButton(
@@ -120,7 +121,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                  // Safe Distance Score Card
                   Card(
                     elevation: 4,
                     child: Container(
@@ -151,16 +151,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               color: _getScoreColor(_safeDistanceScore),
                             ),
                           ),
-                          const Text(
-                            'Safe Distance Score',
-                            style: TextStyle(
+                          Text(
+                            loc?.translate('safeDistanceScore') ?? 'Safe Distance Score',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Based on warnings per session time',
+                            loc?.translate('safeDistanceScoreDescription') ?? 'Based on warnings per session time',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -173,7 +173,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Today's Stats
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -185,7 +184,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               const Icon(Icons.today, color: Colors.blue),
                               const SizedBox(width: 8),
                               Text(
-                                "Today's Activity",
+                                loc?.translate('todayActivity') ?? "Today's Activity",
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                             ],
@@ -196,7 +195,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               Expanded(
                                 child: _StatBox(
                                   value: '${_todayStats?.warnings ?? 0}',
-                                  label: 'Warnings',
+                                  label: loc?.translate('warnings') ?? 'Warnings',
                                   icon: Icons.warning_amber,
                                   color: Colors.orange,
                                 ),
@@ -205,7 +204,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               Expanded(
                                 child: _StatBox(
                                   value: '${_todayStats?.blocks ?? 0}',
-                                  label: 'Blocks',
+                                  label: loc?.translate('blocks') ?? 'Blocks',
                                   icon: Icons.block,
                                   color: Colors.red,
                                 ),
@@ -214,7 +213,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               Expanded(
                                 child: _StatBox(
                                   value: '${_todayStats?.sessionMinutes ?? 0}m',
-                                  label: 'Protected',
+                                  label: loc?.translate('protected') ?? 'Protected',
                                   icon: Icons.shield,
                                   color: Colors.green,
                                 ),
@@ -228,7 +227,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // Weekly Chart
                   if (_weekHistory != null && _weekHistory!.isNotEmpty)
                     Card(
                       child: Padding(
@@ -241,7 +239,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 const Icon(Icons.bar_chart, color: Colors.purple),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Last 7 Days',
+                                  loc?.translate('last7Days') ?? 'Last 7 Days',
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ],
@@ -298,7 +296,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // All-time Stats
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -310,7 +307,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               const Icon(Icons.history, color: Colors.teal),
                               const SizedBox(width: 8),
                               Text(
-                                'All Time',
+                                loc?.translate('allTime') ?? 'All Time',
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                             ],
@@ -318,19 +315,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           const SizedBox(height: 16),
                           _AllTimeStatRow(
                             icon: Icons.warning_amber,
-                            label: 'Total Warnings',
+                            label: loc?.translate('totalWarnings') ?? 'Total Warnings',
                             value: '${_totalStats?.totalWarnings ?? 0}',
                           ),
                           const Divider(),
                           _AllTimeStatRow(
                             icon: Icons.block,
-                            label: 'Total Blocks',
+                            label: loc?.translate('totalBlocks') ?? 'Total Blocks',
                             value: '${_totalStats?.totalBlocks ?? 0}',
                           ),
                           const Divider(),
                           _AllTimeStatRow(
                             icon: Icons.timer,
-                            label: 'Total Protected Time',
+                            label: loc?.translate('totalProtectedTime') ?? 'Total Protected Time',
                             value: _totalStats?.totalSessionTimeFormatted ?? '0h 0m',
                           ),
                         ],
@@ -340,7 +337,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   
                   const SizedBox(height: 24),
                   
-                  // Tips Section
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -350,19 +346,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'ðŸ’¡ Tips for a better score',
-                          style: TextStyle(
+                        Text(
+                          loc?.translate('tipsForBetterScore') ?? 'ðŸ’¡ Tips for a better score',
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'â€?Keep your device at arm\'s length\n'
-                          'â€?Take breaks every 20 minutes\n'
-                          'â€?Adjust screen brightness to your environment\n'
-                          'â€?Lower score = more warnings = closer to screen',
+                          loc?.translate('tipsContent') ?? '',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[700],
@@ -455,4 +448,3 @@ class _AllTimeStatRow extends StatelessWidget {
     );
   }
 }
-

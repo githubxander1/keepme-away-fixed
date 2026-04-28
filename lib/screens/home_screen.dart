@@ -4,6 +4,7 @@ import 'dart:io';
 import '../services/protection_service.dart';
 import '../utils/prefs.dart';
 import '../utils/page_transitions.dart';
+import '../l10n/app_localizations.dart';
 import 'calibration_screen.dart';
 import 'settings_screen.dart';
 import 'statistics_screen.dart';
@@ -47,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _isProtectionActive = isRunning;
         });
         
-        // Update preferences
         PrefsHelper.setIsProtectionActive(isRunning);
       }
     }
@@ -57,20 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_isLoading) return;
 
     setState(() => _isLoading = true);
+    final loc = AppLocalizations.of(context);
 
     try {
       if (_isProtectionActive) {
-        // Stop protection
         final success = await ProtectionService.stop();
         if (success) {
           await PrefsHelper.setIsProtectionActive(false);
           setState(() => _isProtectionActive = false);
-          _showSnackBar('Protection stopped');
+          _showSnackBar(loc?.translate('protectionStopped') ?? 'Protection stopped');
         } else {
-          _showSnackBar('Failed to stop protection');
+          _showSnackBar(loc?.translate('failedToStopProtection') ?? 'Failed to stop protection');
         }
       } else {
-        // Start protection
         final success = await ProtectionService.start(
           baselineArea: PrefsHelper.getBaselineArea(),
           thresholdFactor: PrefsHelper.getThresholdFactor(),
@@ -82,9 +81,9 @@ class _HomeScreenState extends State<HomeScreen> {
         if (success) {
           await PrefsHelper.setIsProtectionActive(true);
           setState(() => _isProtectionActive = true);
-          _showSnackBar('Protection started');
+          _showSnackBar(loc?.translate('protectionStarted') ?? 'Protection started');
         } else {
-          _showSnackBar('Failed to start protection');
+          _showSnackBar(loc?.translate('failedToStartProtection') ?? 'Failed to start protection');
         }
       }
     } catch (e) {
@@ -119,32 +118,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _resetCalibration() async {
+    final loc = AppLocalizations.of(context);
+    
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset Calibration'),
-        content: const Text('This will clear your current calibration and stop protection. Continue?'),
+        title: Text(loc?.translate('resetConfirmation') ?? 'Reset Calibration'),
+        content: Text(loc?.translate('resetMessage') ?? 'This will clear your current calibration and stop protection. Continue?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(loc?.translate('cancel') ?? 'Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Reset'),
+            child: Text(loc?.translate('reset') ?? 'Reset'),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
-      // Stop protection first
       await ProtectionService.stop();
-      
-      // Clear calibration
       await PrefsHelper.clearCalibration();
       
-      // Navigate to calibration
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const CalibrationScreen()),
@@ -155,18 +152,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final baseline = PrefsHelper.getBaselineArea();
     final isCalibrated = PrefsHelper.getIsCalibrated();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('KeepMe Away'),
+        title: Text(loc?.translate('appTitle') ?? 'KeepMe Away'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             onPressed: _navigateToStatistics,
             icon: const Icon(Icons.bar_chart),
-            tooltip: 'Statistics',
+            tooltip: loc?.translate('statistics') ?? 'Statistics',
           ),
           IconButton(
             onPressed: _navigateToSettings,
@@ -179,7 +177,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -198,11 +195,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Protection Status',
+                              loc?.translate('protectionStatus') ?? 'Protection Status',
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             Text(
-                              _isProtectionActive ? 'Active' : 'Inactive',
+                              _isProtectionActive 
+                                  ? (loc?.translate('active') ?? 'Active') 
+                                  : (loc?.translate('inactive') ?? 'Inactive'),
                               style: TextStyle(
                                 color: _isProtectionActive ? Colors.green : Colors.grey,
                                 fontWeight: FontWeight.bold,
@@ -221,9 +220,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'âœ?Your screen is being protected. You can minimize the app.',
-                          style: TextStyle(color: Colors.green),
+                        child: Text(
+                          loc?.translate('protectionActiveMessage') ?? 'Your screen is being protected. You can minimize the app.',
+                          style: const TextStyle(color: Colors.green),
                         ),
                       ),
                     ],
@@ -234,7 +233,6 @@ class _HomeScreenState extends State<HomeScreen> {
             
             const SizedBox(height: 16),
             
-            // Calibration Info
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -242,15 +240,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Calibration Info',
+                      loc?.translate('calibrationInfo') ?? 'Calibration Info',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
-                    Text('Calibrated: ${isCalibrated ? 'Yes' : 'No'}'),
+                    Text('${loc?.translate('calibrated') ?? 'Calibrated'}: ${isCalibrated ? (loc?.translate('yes') ?? 'Yes') : (loc?.translate('no') ?? 'No')}'),
                     if (isCalibrated) ...[
-                      Text('Baseline Area: ${baseline.toStringAsFixed(4)}'),
-                      Text('Threshold Factor: ${PrefsHelper.getThresholdFactor()}'),
-                      Text('Warning Time: ${PrefsHelper.getWarningTime()}s'),
+                      Text('${loc?.translate('baselineArea') ?? 'Baseline Area'}: ${baseline.toStringAsFixed(4)}'),
+                      Text('${loc?.translate('thresholdFactor') ?? 'Threshold Factor'}: ${PrefsHelper.getThresholdFactor()}'),
+                      Text('${loc?.translate('warningTime') ?? 'Warning Time'}: ${PrefsHelper.getWarningTime()}s'),
                     ],
                   ],
                 ),
@@ -259,7 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
             
             const SizedBox(height: 24),
             
-            // Main Control Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -279,7 +276,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     : Text(
-                        _isProtectionActive ? 'Stop Protection' : 'Start Protection',
+                        _isProtectionActive 
+                            ? (loc?.translate('stopProtection') ?? 'Stop Protection') 
+                            : (loc?.translate('startProtection') ?? 'Start Protection'),
                         style: const TextStyle(fontSize: 16),
                       ),
               ),
@@ -287,20 +286,19 @@ class _HomeScreenState extends State<HomeScreen> {
             
             const SizedBox(height: 16),
             
-            // Secondary Actions
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _navigateToCalibration,
-                    child: const Text('Recalibrate'),
+                    child: Text(loc?.translate('recalibrate') ?? 'Recalibrate'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _resetCalibration,
-                    child: const Text('Reset'),
+                    child: Text(loc?.translate('reset') ?? 'Reset'),
                   ),
                 ),
               ],
@@ -308,7 +306,6 @@ class _HomeScreenState extends State<HomeScreen> {
             
             const SizedBox(height: 24),
             
-            // Help Text
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -318,24 +315,20 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'How it works:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Text(
+                    loc?.translate('howItWorks') ?? 'How it works:',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'â€?The app monitors your face distance using the front camera\n'
-                    'â€?When you get too close, you\'ll see a warning countdown\n'
-                    'â€?If you stay too close, the screen will be blocked\n'
-                    'â€?All processing is done on-device for privacy\n'
-                    'â€?Powered by open-source models (no Google services)',
-                    style: TextStyle(fontSize: 12),
+                  Text(
+                    loc?.translate('howItWorksContent') ?? '',
+                    style: const TextStyle(fontSize: 12),
                   ),
                   if (Platform.isAndroid) ...[
                     const SizedBox(height: 8),
-                    const Text(
-                      'Note: The protection runs in the background. You can use the notification to stop or recalibrate.',
-                      style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+                    Text(
+                      loc?.translate('protectionRunningNote') ?? '',
+                      style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
                     ),
                   ],
                 ],

@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import '../utils/prefs.dart';
+import '../l10n/app_localizations.dart';
 import 'calibration_screen.dart';
 import 'home_screen.dart';
 
@@ -34,16 +35,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Re-check permissions when user returns from settings
     if (state == AppLifecycleState.resumed) {
       _checkPermissions();
     }
   }
 
   Future<void> _checkInitialState() async {
-    // Use addPostFrameCallback to avoid navigation during build
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Check if already calibrated and navigate accordingly
       if (PrefsHelper.getIsCalibrated()) {
         if (mounted) {
           Navigator.of(context).pushReplacement(
@@ -60,15 +58,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
   Future<void> _checkPermissions() async {
     setState(() => _isCheckingPermissions = true);
 
-    // Check camera permission
     final cameraStatus = await Permission.camera.status;
     _cameraPermissionGranted = cameraStatus.isGranted;
 
-    // Check overlay permission (Android only)
     if (Platform.isAndroid) {
       _overlayPermissionGranted = await _checkOverlayPermission();
     } else {
-      _overlayPermissionGranted = true; // iOS doesn't need overlay permission for this demo
+      _overlayPermissionGranted = true;
     }
 
     setState(() => _isCheckingPermissions = false);
@@ -96,7 +92,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
     try {
       const platform = MethodChannel('protection_service');
       await platform.invokeMethod('requestOverlayPermission');
-      // Check again after user returns from settings
       await Future.delayed(const Duration(seconds: 1));
       _overlayPermissionGranted = await _checkOverlayPermission();
       setState(() {});
@@ -124,6 +119,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    
     if (_isCheckingPermissions) {
       return const Scaffold(
         body: Center(
@@ -134,7 +131,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('KeepMe Away Setup'),
+        title: Text(loc?.translate('appTitleSetup') ?? 'KeepMe Away Setup'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
@@ -142,51 +139,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '欢迎使用 KeepMe Away',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            Text(
+              loc?.translate('welcome') ?? 'Welcome to KeepMe Away',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            const Text(
-              '本应用通过前置摄像头监测您与屏幕的距离，帮助保护您的眼睛。所有检测均在设备本地完成，不会保存或传输任何图像。',
-              style: TextStyle(fontSize: 12),
+            Text(
+              loc?.translate('welcomeDescription') ?? '',
+              style: const TextStyle(fontSize: 12),
             ),
             const SizedBox(height: 32),
-            const Text(
-              '需要以下权限：',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            Text(
+              loc?.translate('requiredPermissions') ?? 'Required Permissions:',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             
-            // Camera Permission
             _buildPermissionTile(
-              title: '相机权限',
-              description: '用于检测面部距离',
+              title: loc?.translate('cameraPermission') ?? 'Camera',
+              description: loc?.translate('cameraPermissionDescription') ?? '',
               isGranted: _cameraPermissionGranted,
               onRequest: _requestCameraPermission,
+              grantText: loc?.translate('grantPermission') ?? 'Grant',
             ),
             
-            // Overlay Permission (Android only)
             if (Platform.isAndroid)
               _buildPermissionTile(
-                title: '悬浮窗权限',
-                description: '用于显示护眼覆盖层',
+                title: loc?.translate('overlayPermission') ?? 'Overlay',
+                description: loc?.translate('overlayPermissionDescription') ?? '',
                 isGranted: _overlayPermissionGranted,
                 onRequest: _requestOverlayPermission,
+                grantText: loc?.translate('grantPermission') ?? 'Grant',
               ),
             
             const SizedBox(height: 32),
             
-            // Battery Optimization (Optional)
             if (Platform.isAndroid) ...[
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.battery_saver),
-                  title: const Text('电池优化'),
-                  subtitle: const Text('建议：关闭以确保后台稳定运行'),
+                  title: Text(loc?.translate('batteryOptimization') ?? 'Battery Optimization'),
+                  subtitle: Text(loc?.translate('batteryOptimizationDescription') ?? ''),
                   trailing: ElevatedButton(
                     onPressed: _requestBatteryOptimization,
-                    child: const Text('设置'),
+                    child: Text(loc?.translate('settingsButton') ?? 'Settings'),
                   ),
                 ),
               ),
@@ -195,7 +191,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
             
             const SizedBox(height: 16),
             
-            // Continue Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -203,9 +198,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text(
-                  '继续校准',
-                  style: TextStyle(fontSize: 12),
+                child: Text(
+                  loc?.translate('continueCalibration') ?? 'Continue to Calibration',
+                  style: const TextStyle(fontSize: 12),
                 ),
               ),
             ),
@@ -220,6 +215,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
     required String description,
     required bool isGranted,
     required VoidCallback onRequest,
+    required String grantText,
   }) {
     return Card(
       child: ListTile(
@@ -233,7 +229,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
             ? const Icon(Icons.done, color: Colors.green)
             : ElevatedButton(
                 onPressed: onRequest,
-                child: const Text('授权'),
+                child: Text(grantText),
               ),
       ),
     );
