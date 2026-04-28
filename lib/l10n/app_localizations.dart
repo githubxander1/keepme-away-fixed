@@ -33,7 +33,7 @@ class AppLocalizations {
     }
     if (params != null) {
       params.forEach((paramKey, paramValue) {
-        result = result?.replaceAll('{$paramKey}', paramValue);
+        result = result.replaceAll('{$paramKey}', paramValue);
       });
     }
     return result;
