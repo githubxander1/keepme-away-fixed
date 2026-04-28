@@ -157,6 +157,7 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
 
     private fun startMonitoring() {
         android.util.Log.d("ProtectionService", "Starting real face detection monitoring")
+        android.util.Log.d("ProtectionService", "Configuration: baselineArea=$baselineArea, thresholdFactor=$thresholdFactor, hysteresisGap=$hysteresisGap, warningTime=$warningTime")
         
         // Reset state for new session
         retryCount = 0
@@ -169,7 +170,11 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 try {
-                    // Any additional monitoring tasks can go here
+                    // Log current state periodically for debugging
+                    val enterThreshold = baselineArea * thresholdFactor
+                    android.util.Log.d("ProtectionService", 
+                        "Monitoring - Baseline: $baselineArea, EnterThreshold: $enterThreshold, " +
+                        "isWarning: $isWarning, isBlocked: $isBlocked, fallbackMode: $fallbackMode")
                     delay(1000) // Check every second
                 } catch (e: Exception) {
                     // Handle errors gracefully

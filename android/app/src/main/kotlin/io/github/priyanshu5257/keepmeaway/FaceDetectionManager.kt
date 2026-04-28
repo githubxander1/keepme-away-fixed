@@ -70,12 +70,28 @@ class FaceDetectionManager(private val context: Context) {
     }
     
     private fun loadModelFile(): MappedByteBuffer {
-        val fileDescriptor = context.assets.openFd("flutter_assets/assets/face_detection_short_range.tflite")
-        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
-        val fileChannel = inputStream.channel
-        val startOffset = fileDescriptor.startOffset
-        val declaredLength = fileDescriptor.declaredLength
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+        // Try multiple paths to find the model
+        val possiblePaths = listOf(
+            "flutter_assets/assets/face_detection_short_range.tflite",
+            "assets/face_detection_short_range.tflite",
+            "face_detection_short_range.tflite"
+        )
+        
+        for (path in possiblePaths) {
+            try {
+                val fileDescriptor = context.assets.openFd(path)
+                val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
+                val fileChannel = inputStream.channel
+                val startOffset = fileDescriptor.startOffset
+                val declaredLength = fileDescriptor.declaredLength
+                Log.d(TAG, "Model loaded from: $path")
+                return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load model from path: $path - ${e.message}")
+            }
+        }
+        
+        throw RuntimeException("Failed to load face detection model from any path")
     }
     
     interface FaceDetectionCallback {
