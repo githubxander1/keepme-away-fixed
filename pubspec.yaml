@@ -74,6 +74,7 @@ flutter:
   assets:
     - assets/icon.png
     - assets/face_detection_short_range.tflite
+    - lib/l10n/
 
 flutter_icons:
   android: true
