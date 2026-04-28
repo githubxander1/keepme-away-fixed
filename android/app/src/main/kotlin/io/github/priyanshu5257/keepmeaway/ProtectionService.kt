@@ -67,12 +67,16 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        android.util.Log.d("ProtectionService", "onStartCommand called with action: ${intent?.action}")
+        
         when (intent?.action) {
             ACTION_STOP -> {
+                android.util.Log.d("ProtectionService", "Received stop action")
                 stopSelf()
                 return START_NOT_STICKY
             }
             ACTION_RECALIBRATE -> {
+                android.util.Log.d("ProtectionService", "Received recalibrate action")
                 openCalibrationScreen()
                 return START_STICKY
             }
@@ -85,6 +89,17 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
                     warningTime = it.getIntExtra("warningTime", 3)
                     detectionThreshold = it.getDoubleExtra("detectionThreshold", 0.5)
                 }
+                
+                // Validate configuration
+                if (baselineArea <= 0) {
+                    android.util.Log.e("ProtectionService", "Invalid baseline area: $baselineArea - service cannot start")
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+                
+                android.util.Log.d("ProtectionService", 
+                    "Configuration loaded - baselineArea: $baselineArea, thresholdFactor: $thresholdFactor, " +
+                    "hysteresisGap: $hysteresisGap, warningTime: $warningTime")
                 
                 startForegroundService()
                 startMonitoring()
@@ -106,15 +121,19 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Protection Service",
-                NotificationManager.IMPORTANCE_LOW
+                "Screen Protection",
+                NotificationManager.IMPORTANCE_DEFAULT  // Changed to DEFAULT for better visibility
             ).apply {
-                description = "Screen protection monitoring"
+                description = "Screen protection monitoring service"
                 setSound(null, null)
+                enableLights(true)
+                lightColor = Color.GREEN
+                enableVibration(false)
             }
             
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
+            android.util.Log.d("ProtectionService", "Notification channel created: $CHANNEL_ID")
         }
     }
 
@@ -137,10 +156,14 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Use a more visible icon and improve notification
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Screen Protection Active")
-            .setContentText("Monitoring face distance")
-            .setSmallIcon(android.R.drawable.ic_menu_view)
+            .setContentText("Monitoring your distance from screen")
+            .setSmallIcon(android.R.drawable.ic_shield)  // Use shield icon instead of view icon
+            .setLargeIcon(getLargeIcon())  // Add large icon for better visibility
+            .setColor(Color.GREEN)  // Set notification color
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setOngoing(true)
             .addAction(
                 android.R.drawable.ic_media_pause, "Stop", stopPendingIntent
@@ -152,7 +175,25 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
 
         startForeground(NOTIFICATION_ID, notification)
         isServiceRunning = true
-        android.util.Log.d("ProtectionService", "Foreground service started successfully")
+        android.util.Log.d("ProtectionService", "Foreground service started successfully - notification shown")
+    }
+    
+    private fun getLargeIcon(): android.graphics.Bitmap? {
+        try {
+            val drawable = resources.getDrawable(android.R.drawable.ic_shield, theme)
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                drawable.intrinsicWidth, 
+                drawable.intrinsicHeight, 
+                android.graphics.Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            return bitmap
+        } catch (e: Exception) {
+            android.util.Log.w("ProtectionService", "Failed to create large icon: ${e.message}")
+            return null
+        }
     }
 
     private fun startMonitoring() {
