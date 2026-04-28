@@ -31,12 +31,13 @@ class AppLocalizations {
     if (result == null) {
       return key;
     }
+    String nonNullResult = result;
     if (params != null) {
       params.forEach((paramKey, paramValue) {
-        result = result.replaceAll('{$paramKey}', paramValue);
+        nonNullResult = nonNullResult.replaceAll('{$paramKey}', paramValue);
       });
     }
-    return result;
+    return nonNullResult;
   }
 }
 
