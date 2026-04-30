@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
 import '../utils/prefs.dart';
+import '../services/protection_service.dart';
 import '../utils/language_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../main.dart';
@@ -58,6 +60,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await PrefsHelper.setSoundEnabled(_soundEnabled);
     await PrefsHelper.setBreakReminderEnabled(_breakReminderEnabled);
     await PrefsHelper.setBreakReminderInterval(_breakReminderInterval);
+
+    if (Platform.isAndroid && PrefsHelper.getIsProtectionActive()) {
+      await ProtectionService.stop();
+      await ProtectionService.start(
+        baselineArea: PrefsHelper.getBaselineArea(),
+        thresholdFactor: PrefsHelper.getThresholdFactor(),
+        hysteresisGap: PrefsHelper.getHysteresisGap(),
+        warningTime: PrefsHelper.getWarningTime(),
+        detectionThreshold: PrefsHelper.getDetectionThreshold(),
+      );
+    }
     
     final loc = AppLocalizations.of(context);
     if (mounted) {
@@ -279,11 +292,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                   
                   Text(
-                    '${loc?.translate('warningTime') ?? 'Warning Time'}: $_warningTime ${loc?.translate('minutes') ?? 'seconds'}',
+                    '${loc?.translate('warningTime') ?? 'Warning Time'}: $_warningTime seconds',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    loc?.translate('warningTimeDescription') ?? 'How long to show warning before blocking screen',
+                    loc?.translate('warningTimeDescription') ?? 'How long to wait before blocking the screen',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   Slider(

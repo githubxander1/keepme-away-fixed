@@ -275,6 +275,7 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
                 // Start warning phase
                 isWarning = true
                 warningStartTime = currentTime
+                triggerHapticFeedback()
                 updateNotification("Warning: Face ${increasePercentage.toInt()}% closer than baseline!")
                 android.util.Log.d("ProtectionService", "WARNING STARTED: Face area increased by ${increasePercentage.toInt()}%")
                 recordWarning() // Record statistics
@@ -326,9 +327,6 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
             return
         }
         
-        // Haptic feedback - vibrate on warning
-        triggerHapticFeedback()
-
         try {
             overlayView = View(this).apply {
                 setBackgroundColor(Color.BLACK)
