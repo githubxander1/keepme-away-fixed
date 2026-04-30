@@ -51,6 +51,9 @@ class FaceDetectionManager(private val context: Context) {
     // TFLite interpreter for BlazeFace model
     private var interpreter: Interpreter? = null
     private val INPUT_SIZE = 128
+    private var sensorOrientation = 0
+    private var isFrontFacing = false
+    private var detectionThreshold = 0.5f
     
     init {
         loadModel()
@@ -87,6 +90,11 @@ class FaceDetectionManager(private val context: Context) {
     
     fun setCallback(callback: FaceDetectionCallback) {
         this.callback = callback
+    }
+
+    fun setDetectionThreshold(value: Double) {
+        detectionThreshold = value.toFloat()
+        Log.d(TAG, "Detection threshold set to $detectionThreshold")
     }
     
     fun startDetection() {
@@ -132,6 +140,8 @@ class FaceDetectionManager(private val context: Context) {
                 callback?.onError("No front camera found")
                 return
             }
+
+            updateCameraCharacteristics(cameraId!!)
             
             setupImageReader()
             
@@ -172,6 +182,22 @@ class FaceDetectionManager(private val context: Context) {
             Log.e(TAG, "Error getting front camera", e)
         }
         return null
+    }
+
+    private fun updateCameraCharacteristics(selectedCameraId: String) {
+        try {
+            val characteristics = cameraManager.getCameraCharacteristics(selectedCameraId)
+            sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 0
+            isFrontFacing = characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT
+            Log.d(
+                TAG,
+                "Camera characteristics - cameraId=$selectedCameraId, sensorOrientation=$sensorOrientation, isFrontFacing=$isFrontFacing"
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Unable to read camera characteristics: ${e.message}")
+            sensorOrientation = 0
+            isFrontFacing = false
+        }
     }
     
     private fun setupImageReader() {
@@ -336,7 +362,7 @@ class FaceDetectionManager(private val context: Context) {
             
             Log.d(TAG, "TFLite processing - Max confidence: $maxConfidence at idx: $bestIdx")
             
-            if (maxConfidence > 0.5f && bestIdx >= 0) {
+            if (maxConfidence > detectionThreshold && bestIdx >= 0) {
                 // Extract bounding box from regressors
                 // BlazeFace uses SSD anchors, the regressor values are offsets
                 val anchor = getAnchor(bestIdx)
@@ -410,10 +436,14 @@ class FaceDetectionManager(private val context: Context) {
         val scaleX = width.toFloat() / INPUT_SIZE
         val scaleY = height.toFloat() / INPUT_SIZE
         
+        val rotation = ((sensorOrientation % 360) + 360) % 360
+        Log.v(TAG, "Preprocess image - source=${width}x${height}, input=${INPUT_SIZE}x${INPUT_SIZE}, rotation=$rotation")
+
         for (y in 0 until INPUT_SIZE) {
             for (x in 0 until INPUT_SIZE) {
-                val srcX = (x * scaleX).toInt().coerceIn(0, width - 1)
-                val srcY = (y * scaleY).toInt().coerceIn(0, height - 1)
+                val mapped = mapInputToSource(x, y, width, height, rotation)
+                val srcX = mapped.first
+                val srcY = mapped.second
                 
                 val yIdx = srcY * yRowStride + srcX
                 val uvIdx = (srcY / 2) * uvRowStride + (srcX / 2) * uvPixelStride
@@ -439,6 +469,43 @@ class FaceDetectionManager(private val context: Context) {
         }
         
         return inputArray
+    }
+
+    private fun mapInputToSource(
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        rotation: Int
+    ): Pair<Int, Int> {
+        val u = x.toFloat() / (INPUT_SIZE - 1).toFloat()
+        val v = y.toFloat() / (INPUT_SIZE - 1).toFloat()
+
+        val srcX: Float
+        val srcY: Float
+
+        when (rotation) {
+            90 -> {
+                srcX = v * (width - 1)
+                srcY = (1f - u) * (height - 1)
+            }
+            180 -> {
+                srcX = (1f - u) * (width - 1)
+                srcY = (1f - v) * (height - 1)
+            }
+            270 -> {
+                srcX = (1f - v) * (width - 1)
+                srcY = u * (height - 1)
+            }
+            else -> {
+                srcX = u * (width - 1)
+                srcY = v * (height - 1)
+            }
+        }
+
+        val adjustedX = srcX.toInt().coerceIn(0, width - 1)
+        val adjustedY = srcY.toInt().coerceIn(0, height - 1)
+        return Pair(adjustedX, adjustedY)
     }
     
     /**

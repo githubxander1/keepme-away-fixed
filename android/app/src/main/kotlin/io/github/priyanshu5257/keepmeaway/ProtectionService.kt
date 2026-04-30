@@ -85,6 +85,12 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
                     warningTime = it.getIntExtra("warningTime", 3)
                     detectionThreshold = it.getDoubleExtra("detectionThreshold", 0.5)
                 }
+
+                faceDetectionManager?.setDetectionThreshold(detectionThreshold)
+                android.util.Log.d(
+                    "ProtectionService",
+                    "Configuration loaded - baselineArea=$baselineArea, thresholdFactor=$thresholdFactor, hysteresisGap=$hysteresisGap, warningTime=$warningTime, detectionThreshold=$detectionThreshold"
+                )
                 
                 startForegroundService()
                 startMonitoring()
@@ -157,6 +163,7 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
 
     private fun startMonitoring() {
         android.util.Log.d("ProtectionService", "Starting real face detection monitoring")
+        android.util.Log.d("ProtectionService", "Using detectionThreshold=$detectionThreshold")
         
         // Reset state for new session
         retryCount = 0
@@ -256,7 +263,8 @@ class ProtectionService : Service(), FaceDetectionManager.FaceDetectionCallback 
             "Baseline: $baselineArea, " +
             "Increase: ${increasePercentage.toInt()}%, " +
             "EnterThreshold: $enterThreshold, " +
-            "ExitThreshold: $exitThreshold"
+            "ExitThreshold: $exitThreshold, " +
+            "DetectionThreshold: $detectionThreshold"
         )
         
         val currentTime = System.currentTimeMillis()
